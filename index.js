@@ -1,175 +1,181 @@
 import e from "express";
 import dotenv from "dotenv";
 import bodyParser from "body-parser";
-import axios from "axios";
-import { chatData } from "./LocalStore/chatData.js";
+// import axios from "axios";
+// import { chatData } from "./LocalStore/chatData.js";
+import { userSessions } from "./Controllers/whatsappCon.js";
+import {
+  handleUserMessage,
+  handleButtonClick,
+} from "./Controllers/whatsappCon.js";
+
 dotenv.config();
 
 const app = e();
 app.use(bodyParser.json());
 
-const ACCESS_TOKEN = process.env.ACCESS_TOKEN;
-const PHONE_NUMBER_ID = process.env.PHONE_NUMBER_ID;
+// const ACCESS_TOKEN = process.env.ACCESS_TOKEN;
+// const PHONE_NUMBER_ID = process.env.PHONE_NUMBER_ID;
 
-async function sendButton(to, text, buttons) {
-  const formattedButtons = buttons.map((btn) => ({
-    type: "reply",
-    reply: { id: btn.id, title: btn.title },
-  }));
+// async function sendButton(to, text, buttons) {
+//   const formattedButtons = buttons.map((btn) => ({
+//     type: "reply",
+//     reply: { id: btn.id, title: btn.title },
+//   }));
 
-  try {
-    const response = await axios.post(
-      `https://graph.facebook.com/v17.0/${PHONE_NUMBER_ID}/messages`,
-      {
-        messaging_product: "whatsapp",
-        to,
-        type: "interactive",
-        interactive: {
-          type: "button",
-          body: { text },
-          action: { buttons: formattedButtons },
-        },
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${ACCESS_TOKEN}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
-    console.log("Button sent:", response.data);
-  } catch (error) {
-    console.error(
-      "Error sending button:",
-      error.response ? error.response.data : error.message
-    );
-  }
-}
+//   try {
+//     const response = await axios.post(
+//       `https://graph.facebook.com/v17.0/${PHONE_NUMBER_ID}/messages`,
+//       {
+//         messaging_product: "whatsapp",
+//         to,
+//         type: "interactive",
+//         interactive: {
+//           type: "button",
+//           body: { text },
+//           action: { buttons: formattedButtons },
+//         },
+//       },
+//       {
+//         headers: {
+//           Authorization: `Bearer ${ACCESS_TOKEN}`,
+//           "Content-Type": "application/json",
+//         },
+//       }
+//     );
+//     console.log("Button sent:", response.data);
+//   } catch (error) {
+//     console.error(
+//       "Error sending button:",
+//       error.response ? error.response.data : error.message
+//     );
+//   }
+// }
 
-async function sendText(to, text) {
-  try {
-    const response = await axios.post(
-      `https://graph.facebook.com/v17.0/${PHONE_NUMBER_ID}/messages`,
-      {
-        messaging_product: "whatsapp",
-        to,
-        type: "text",
-        text: { body: text },
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${ACCESS_TOKEN}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
-    console.log("Text sent:", response.data);
-  } catch (error) {
-    console.error(
-      "Error sending text:",
-      error.response ? error.response.data : error.message
-    );
-  }
-}
+// async function sendText(to, text) {
+//   try {
+//     const response = await axios.post(
+//       `https://graph.facebook.com/v17.0/${PHONE_NUMBER_ID}/messages`,
+//       {
+//         messaging_product: "whatsapp",
+//         to,
+//         type: "text",
+//         text: { body: text },
+//       },
+//       {
+//         headers: {
+//           Authorization: `Bearer ${ACCESS_TOKEN}`,
+//           "Content-Type": "application/json",
+//         },
+//       }
+//     );
+//     console.log("Text sent:", response.data);
+//   } catch (error) {
+//     console.error(
+//       "Error sending text:",
+//       error.response ? error.response.data : error.message
+//     );
+//   }
+// }
 
-function chatLogs(userNumber, messageData) {
-  if (!chatData[userNumber]) {
-    chatData[userNumber] = [];
-  }
-  chatData[userNumber].push(messageData);
-  console.log("Stored message:", chatData[userNumber]);
-}
+// function chatLogs(userNumber, messageData) {
+//   if (!chatData[userNumber]) {
+//     chatData[userNumber] = [];
+//   }
+//   chatData[userNumber].push(messageData);
+//   console.log("Stored message:", chatData[userNumber]);
+// }
 
-console.log("Chat Data Store:", chatData);
+// console.log("Chat Data Store:", chatData);
 
 // Flow Logic
 
-async function handleUserMessage(userNumber, message) {
-  chatLogs(userNumber, {
-    from: userNumber,
-    type: "text",
-    message,
-    direction: "inbound",
-    timestamp: new Date().toISOString(),
-  });
-  await sendButton(userNumber, "How can I help you?", [
-    { id: "buy_product", title: "Buy Product" },
-    { id: "service", title: "Service" },
-  ]);
+// async function handleUserMessage(userNumber, message) {
+//   chatLogs(userNumber, {
+//     from: userNumber,
+//     type: "text",
+//     message,
+//     direction: "inbound",
+//     timestamp: new Date().toISOString(),
+//   });
+//   await sendButton(userNumber, "How can I help you?", [
+//     { id: "buy_product", title: "Buy Product" },
+//     { id: "service", title: "Service" },
+//   ]);
 
-  chatLogs(userNumber, {
-    from: "bot",
-    type: "button",
-    message: "How can I help you?",
-    direction: "outbound",
-    timestamp: new Date().toISOString(),
-  });
-}
+//   chatLogs(userNumber, {
+//     from: "bot",
+//     type: "button",
+//     message: "How can I help you?",
+//     direction: "outbound",
+//     timestamp: new Date().toISOString(),
+//   });
+// }
 
-async function handleButtonClick(userNumber, buttonId) {
-  console.log("Button clicked:", buttonId);
+// async function handleButtonClick(userNumber, buttonId) {
+//   console.log("Button clicked:", buttonId);
 
-  chatLogs(userNumber, {
-    from: userNumber,
-    type: "button",
-    message: buttonId,
-    direction: "inbound",
-    timestamp: new Date().toISOString(),
-  });
+//   chatLogs(userNumber, {
+//     from: userNumber,
+//     type: "button",
+//     message: buttonId,
+//     direction: "inbound",
+//     timestamp: new Date().toISOString(),
+//   });
 
-  if (buttonId === "buy_product") {
-    await sendText(
-      userNumber,
-      "Great! We have these products: Phone, Laptop, Tablet."
-    );
+//   if (buttonId === "buy_product") {
+//     await sendText(
+//       userNumber,
+//       "Great! We have these products: Phone, Laptop, Tablet."
+//     );
 
-    chatLogs(userNumber, {
-      from: "bot",
-      type: "text",
-      message: "Great! We have these products: Phone, Laptop, Tablet.",
-      direction: "outbound",
-      timestamp: new Date().toISOString(),
-    });
-  } else if (buttonId === "service") {
-    await sendButton(userNumber, "Which service do you need?", [
-      { id: "mobile_service", title: "Mobile" },
-      { id: "laptop_service", title: "Laptop" },
-    ]);
-    chatLogs(userNumber, {
-      from: "bot",
-      type: "button",
-      message: "Which service do you need?",
-      direction: "outbound",
-      timestamp: new Date().toISOString(),
-    });
-  } else if (buttonId === "mobile_service") {
-    await sendText(
-      userNumber,
-      "You selected Mobile Service. Our team will contact you shortly."
-    );
-    chatLogs(userNumber, {
-      from: "bot",
-      type: "text",
-      message:
-        "You selected Mobile Service. Our team will contact you shortly.",
-      direction: "outbound",
-      timestamp: new Date().toISOString(),
-    });
-  } else if (buttonId === "laptop_service") {
-    await sendText(
-      userNumber,
-      "You selected Laptop Service. Our team will contact you shortly."
-    );
-    chatLogs(userNumber, {
-      from: "bot",
-      type: "text",
-      message:
-        "You selected Laptop Service. Our team will contact you shortly.",
-      direction: "outbound",
-      timestamp: new Date().toISOString(),
-    });
-  }
-}
+//     chatLogs(userNumber, {
+//       from: "bot",
+//       type: "text",
+//       message: "Great! We have these products: Phone, Laptop, Tablet.",
+//       direction: "outbound",
+//       timestamp: new Date().toISOString(),
+//     });
+//   } else if (buttonId === "service") {
+//     await sendButton(userNumber, "Which service do you need?", [
+//       { id: "mobile_service", title: "Mobile" },
+//       { id: "laptop_service", title: "Laptop" },
+//     ]);
+//     chatLogs(userNumber, {
+//       from: "bot",
+//       type: "button",
+//       message: "Which service do you need?",
+//       direction: "outbound",
+//       timestamp: new Date().toISOString(),
+//     });
+//   } else if (buttonId === "mobile_service") {
+//     await sendText(
+//       userNumber,
+//       "You selected Mobile Service. Our team will contact you shortly."
+//     );
+//     chatLogs(userNumber, {
+//       from: "bot",
+//       type: "text",
+//       message:
+//         "You selected Mobile Service. Our team will contact you shortly.",
+//       direction: "outbound",
+//       timestamp: new Date().toISOString(),
+//     });
+//   } else if (buttonId === "laptop_service") {
+//     await sendText(
+//       userNumber,
+//       "You selected Laptop Service. Our team will contact you shortly."
+//     );
+//     chatLogs(userNumber, {
+//       from: "bot",
+//       type: "text",
+//       message:
+//         "You selected Laptop Service. Our team will contact you shortly.",
+//       direction: "outbound",
+//       timestamp: new Date().toISOString(),
+//     });
+//   }
+// }
 
 // Webhook verification
 app.get("/webhook", (req, res) => {
@@ -218,8 +224,8 @@ app.get("/chats", (req, res) => {
   res.status(200).json({
     code: 200,
     status: "Success",
-    userCount: Object.keys(chatData).length,
-    data: chatData,
+    userCount: Object.keys(userSessions).length,
+    data: userSessions,
   });
 });
 
