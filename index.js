@@ -1,9 +1,12 @@
 import e from "express";
 import dotenv from "dotenv";
 import bodyParser from "body-parser";
-// import axios from "axios";
-// import { chatData } from "./LocalStore/chatData.js";
-import { userSessions } from "./Controllers/whatsappCon.js";
+import {
+  handleFormFlow,
+  sendSlotList,
+  sendText,
+  userSessions,
+} from "./Controllers/whatsappCon.js";
 import {
   handleUserMessage,
   handleButtonClick,
@@ -193,6 +196,8 @@ app.get("/webhook", (req, res) => {
 
 // Receive messages & button clicks
 app.post("/webhook", async (req, res) => {
+  // console.log("WEBHOOK BODY:", JSON.stringify(req.body, null, 2));
+
   const body = req.body;
 
   if (body.object) {
@@ -203,15 +208,79 @@ app.post("/webhook", async (req, res) => {
       const msg = messages[0];
       const from = msg.from;
 
+      // console.log("Incoming message type:", msg.type);
+
       if (msg.type === "text") {
         await handleUserMessage(from, msg.text.body);
+      }
+      //    else if (msg.type === "interactive") {
+      //     const interactiveType = msg.interactive.type;
+
+      //     // if (interactiveType === "button_reply") {
+      //     //   const buttonId = msg.interactive.button_reply.id;
+      //     if (interactiveType === "button") {
+      //       const buttonId = msg.button.payload;
+      //       console.log("Template button clicked:", buttonId);
+      //       await handleButtonClick(from, buttonId);
+      //     }
+      //   }
+      // }
+      else if (msg.type === "button") {
+        const buttonId = msg.button.payload;
+        // console.log("Template button clicked:", buttonId);
+        await handleButtonClick(from, buttonId);
       } else if (msg.type === "interactive") {
         const interactiveType = msg.interactive.type;
 
         if (interactiveType === "button_reply") {
           const buttonId = msg.interactive.button_reply.id;
+          // console.log("Interactive button clicked:", buttonId);
           await handleButtonClick(from, buttonId);
+        } else if (interactiveType === "list_reply") {
+          const listId = msg.interactive.list_reply.id;
+          const listTitle = msg.interactive.list_reply.title;
+
+          if (userSessions[from]) {
+            const session = userSessions[from];
+
+            if (session.step === 3) {
+              session.data.brandName = listTitle;
+              session.step = 4;
+              await sendText(from, "What’s your *model name*?");
+            } else if (session.step === 5) {
+              session.data.issueType = listTitle;
+              session.step = 6;
+              await sendSlotList(from);
+            } else if (session.step === 6) {
+              session.data.slot = listTitle;
+              session.step = 7;
+              await sendText(from, "Please share your *location pin*");
+            }
+          }
         }
+      } else if (msg.type === "location") {
+        const { latitude, longitude, name, address } = msg.location;
+        console.log(
+          "User shared location:",
+          latitude,
+          longitude,
+          name,
+          address
+        );
+
+        if (userSessions[from]) {
+          userSessions[from].data.location = {
+            latitude,
+            longitude,
+            name,
+            address,
+          };
+          userSessions[from].step = 7;
+        }
+
+        await handleFormFlow(from, "__LOCATION_RECEIVED__");
+      } else {
+        console.log("Unhandled message type:", msg.type);
       }
     }
     res.sendStatus(200);

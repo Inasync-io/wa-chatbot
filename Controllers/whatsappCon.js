@@ -120,7 +120,7 @@ export async function sendIntro(to) {
                 {
                   type: "image",
                   image: {
-                    link: "https://www.w3schools.com/w3images/lights.jpg", // Replace with your real image
+                    link: "https://www.w3schools.com/w3images/lights.jpg",
                   },
                 },
               ],
@@ -167,10 +167,205 @@ export async function handleUserMessage(userNumber, message) {
   await sendText(userNumber, "Please type *hi* to start booking your service.");
 }
 
+export async function sendBrandList(to) {
+  try {
+    const res = await axios.post(
+      `https://graph.facebook.com/v17.0/${PHONE_NUMBER_ID}/messages`,
+      {
+        messaging_product: "whatsapp",
+        to,
+        type: "interactive",
+        interactive: {
+          type: "list",
+          header: {
+            type: "text",
+            text: "Brand Selection",
+          },
+          body: {
+            text: "Please choose your brand name from the list below:",
+          },
+          footer: {
+            text: "Select one option to continue.",
+          },
+          action: {
+            button: "Choose Brand",
+            sections: [
+              {
+                title: "Available Brands",
+                rows: [
+                  {
+                    id: "trackandtrail",
+                    title: "Track and Trail",
+                    // description: "Track and Trail Cycle",
+                  },
+                  {
+                    id: "bsa",
+                    title: "BSA",
+                    // description: "BSA Cycles",
+                  },
+                  {
+                    id: "hercules",
+                    title: "Hercules",
+                    // description: "Hercules Cycles",
+                  },
+                  {
+                    id: "brand_montra",
+                    title: "Montra",
+                    // description: "Montra Cycles",
+                  },
+                ],
+              },
+            ],
+          },
+        },
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${ACCESS_TOKEN}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    console.log("Brand list sent:", res.data);
+  } catch (err) {
+    console.error(
+      "Error sending brand list:",
+      err.response?.data || err.message
+    );
+  }
+}
+
+export async function sendIssueTypes(to) {
+  try {
+    const res = await axios.post(
+      `https://graph.facebook.com/v17.0/${PHONE_NUMBER_ID}/messages`,
+      {
+        messaging_product: "whatsapp",
+        to,
+        type: "interactive",
+        interactive: {
+          type: "list",
+          header: {
+            type: "text",
+            text: "Select your issue type?",
+          },
+          body: {
+            text: "Please choose your issue type from the list below:",
+          },
+          footer: {
+            text: "Select one option to continue.",
+          },
+          action: {
+            button: "Choose Issue Type",
+            sections: [
+              {
+                title: "Type of Issues",
+                rows: [
+                  {
+                    id: "frame",
+                    title: "Frame",
+                  },
+                  {
+                    id: "rim",
+                    title: "Rim",
+                  },
+                  {
+                    id: "tyre",
+                    title: "Tyre",
+                  },
+                ],
+              },
+            ],
+          },
+        },
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${ACCESS_TOKEN}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    console.log("Issue list sent:", res.data);
+  } catch (err) {
+    console.error(
+      "Error sending issue list:",
+      err.response?.data || err.message
+    );
+  }
+}
+
+export async function sendSlotList(to) {
+  try {
+    const res = await axios.post(
+      `https://graph.facebook.com/v17.0/${PHONE_NUMBER_ID}/messages`,
+      {
+        messaging_product: "whatsapp",
+        to,
+        type: "interactive",
+        interactive: {
+          type: "list",
+          header: {
+            type: "text",
+            text: "Slots Selection",
+          },
+          body: {
+            text: "Please choose your slots from the list below:",
+          },
+          footer: {
+            text: "Select three option to continue.",
+          },
+          action: {
+            button: "Choose Slots",
+            sections: [
+              {
+                title: "Available Slots",
+                rows: [
+                  {
+                    id: "slot_1",
+                    title: "12 Nov - 10 AM to 11 AM",
+                  },
+                  {
+                    id: "slot_2",
+                    title: "12 Nov - 11 AM to 12 PM",
+                  },
+                  {
+                    id: "slot_3",
+                    title: "12 Nov - 02 PM to 03 PM",
+                  },
+                  {
+                    id: "slot_4",
+                    title: "12 Nov - 04 PM to 05 PM",
+                  },
+                ],
+              },
+            ],
+          },
+        },
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${ACCESS_TOKEN}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    console.log("slot list sent:", res.data);
+  } catch (err) {
+    console.error(
+      "Error sending slot list:",
+      err.response?.data || err.message
+    );
+  }
+}
+
 export async function handleButtonClick(userNumber, buttonId) {
   console.log("User clicked:", buttonId);
 
-  if (buttonId === "book_via_whatsapp") {
+  if (buttonId === "Book via WhatsApp") {
     userSessions[userNumber] = { step: 1, data: {} };
     await sendText(userNumber, "Let's get your booking started!");
     await sendText(userNumber, "What’s your full name?");
@@ -187,46 +382,67 @@ export async function handleFormFlow(userNumber, userResponse) {
     return;
   }
 
+  if (/^(cancel|stop|exit)$/i.test(userResponse.trim())) {
+    delete userSessions[userNumber];
+    await sendText(
+      userNumber,
+      "Your booking has been cancelled. You can type *Book via WhatsApp* to start again anytime."
+    );
+    return;
+  }
+
   const { step } = session;
 
   switch (step) {
     case 1:
-      session.data.name = userResponse;
+      session.data.name = userResponse.trim();
       session.step = 2;
-      await sendText(userNumber, "Got it! Please share your email address.");
+      await sendText(userNumber, "Got it! Please share your *email address*.");
       break;
 
     case 2:
-      session.data.email = userResponse;
+      session.data.email = userResponse.trim();
       session.step = 3;
-      await sendText(userNumber, "Brand name?");
+      await sendBrandList(userNumber);
       break;
 
-    case 3:
-      session.data.brandName = userResponse;
-      session.step = 4;
-      await sendText(userNumber, "Model Name?");
-      break;
+    // case 3:
+    //   session.data.brandName = userResponse.trim();
+    //   session.step = 4;
+    //   await sendText(userNumber, "What’s your *model name*?");
+    //   break;
 
     case 4:
-      session.data.modelName = userResponse;
-      session.data.userNumber = userNumber;
+      session.data.modelName = userResponse.trim();
+      session.step = 5;
+      await sendIssueTypes(userNumber);
+      break;      
 
-      // Confirm booking with the user
-      await sendText(
-        userNumber,
-        `Perfect, ${session.data.name}! Here’s your booking summary:\n\n` +
-          `Email: ${session.data.email}\n` +
-          `Brand: ${session.data.brandName}\n` +
-          `Model: ${session.data.modelName}\n\n` +
-          `Please reply with *confirm* to submit your booking.`
-      );
-
-      session.step = 5; // waiting for confirmation
+    case 7:
+      if (userResponse === "__LOCATION_RECEIVED__") {
+        session.step = 8;
+        await sendText(
+          userNumber,
+          `Here’s your booking summary:\n\n` +
+            `Name: ${session.data.name}\n` +
+            `Email: ${session.data.email}\n` +
+            `Brand: ${session.data.brandName}\n` +
+            `Model: ${session.data.modelName}\n` +
+            `Issue: ${session.data.issueType}\n` +
+            `Slot: ${session.data.slot}\n` +
+            `Location: ${session.data.location?.address || "Received"}\n\n` +
+            `Please reply with *confirm* to submit or *cancel* to stop.`
+        );
+      } else {
+        await sendText(
+          userNumber,
+          "Waiting for your location.\nPlease share your location using the attach icon."
+        );
+      }
       break;
 
-    case 5:
-      if (/^(confirm|yes)$/i.test(userResponse)) {
+    case 8:
+      if (/^(confirm|yes)$/i.test(userResponse.trim())) {
         try {
           const response = await axios.post(
             "https://your-api-endpoint.com/api/bookings",
@@ -235,13 +451,16 @@ export async function handleFormFlow(userNumber, userResponse) {
               email: session.data.email,
               brandName: session.data.brandName,
               modelName: session.data.modelName,
+              issueType: session.data.issueType,
+              slot: session.data.slot,
+              location: session.data.location,
               userNumber: session.data.userNumber,
             }
           );
 
           await sendText(
             userNumber,
-            `Your booking has been submitted successfully! Our team will contact you soon.`
+            "Your booking has been submitted successfully! Our team will contact you soon."
           );
 
           console.log("Booking saved to API:", response.data);
@@ -254,10 +473,16 @@ export async function handleFormFlow(userNumber, userResponse) {
         }
 
         delete userSessions[userNumber];
+      } else if (/^(cancel|no)$/i.test(userResponse.trim())) {
+        await sendText(
+          userNumber,
+          "Booking cancelled. You can type *Book via WhatsApp* to start again anytime."
+        );
+        delete userSessions[userNumber];
       } else {
         await sendText(
           userNumber,
-          "Booking not confirmed. Please type *confirm* to submit or *cancel* to end."
+          "Please reply with *confirm* to submit or *cancel* to stop."
         );
       }
       break;
