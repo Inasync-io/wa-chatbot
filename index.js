@@ -11,6 +11,8 @@ import {
   handleUserMessage,
   handleButtonClick,
 } from "./Controllers/whatsappCon.js";
+import router from "./routers/router.js";
+import { connectDB } from "./db/connectDb.js";
 
 dotenv.config();
 
@@ -309,9 +311,14 @@ app.get("/", (req, res) => {
   });
 });
 
+app.use("/", router);
+
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
+  connectDB();
 });
+
+
 // import e from "express";
 // import dotenv from "dotenv";
 // dotenv.config();

@@ -1,6 +1,7 @@
+import { SrBooking } from "../models/srBooking.js";
 import axios from "axios";
 import dotenv from "dotenv";
-import fs from "fs";
+import dayjs from "dayjs";
 
 dotenv.config();
 
@@ -36,71 +37,6 @@ export async function sendText(to, message) {
     );
   }
 }
-
-// export async function sendIntro(to) {
-//   try {
-//     const res = await axios.post(
-//       `https://graph.facebook.com/v17.0/${PHONE_NUMBER_ID}/messages`,
-//       {
-//         messaging_product: "whatsapp",
-//         to,
-//         type: "interactive",
-//         interactive: {
-//           // type: "cta_url",
-//           type: "button",
-//           header: {
-//             type: "image",
-//             image: {
-//               link: "https://www.w3schools.com/w3images/lights.jpg",
-//             },
-//           },
-//           body: {
-//             text: "Hello! Welcome to our Service Center.\n\nBook your service ticket online or continue via WhatsApp.",
-//           },
-//           footer: {
-//             text: "Expert Care • Fast Booking",
-//           },
-//           action: {
-//             // name: "cta_url",
-//             // parameters: {
-//             //   display_text: "Book Ticket Online",
-//             //   url: "https://github.com/Inasync-io",
-//             // },
-//             buttons: [
-//               // {
-//               //   name: "cta_url",
-//               //   parameters: {
-//               //     display_text: "Book Ticket Online",
-//               //     url: "https://github.com/Inasync-io",
-//               //   },
-//               // },
-//               {
-//                 type: "reply",
-//                 reply: {
-//                   id: "book_via_whatsapp",
-//                   title: "Book via WhatsApp",
-//                 },
-//               },
-//             ],
-//           },
-//         },
-//       },
-//       {
-//         headers: {
-//           Authorization: `Bearer ${ACCESS_TOKEN}`,
-//           "Content-Type": "application/json",
-//         },
-//       }
-//     );
-
-//     console.log("Intro card sent:", res.data);
-//   } catch (error) {
-//     console.error(
-//       "Error sending intro card:",
-//       error.response ? error.response.data : error.message
-//     );
-//   }
-// }
 
 export async function sendIntro(to) {
   try {
@@ -150,12 +86,15 @@ export async function handleUserMessage(userNumber, message) {
   message = message.trim();
 
   if (/^(hi|hello)$/i.test(message)) {
-    await sendIntro(userNumber);
+    // await sendIntro(userNumber);
 
-    // await sendText(
-    //   userNumber,
-    //   "Hi there! Thanks for contacting our Service Center."
-    // );
+    await sendText(
+      userNumber,
+      "Hi there! Thanks for contacting our Service Center."
+    );
+    userSessions[userNumber] = { step: 1, data: {} };
+    await sendText(userNumber, "Let's get your booking started!");
+    await sendText(userNumber, "What’s your full name?");
     return;
   }
 
@@ -194,8 +133,8 @@ export async function sendBrandList(to) {
                 title: "Available Brands",
                 rows: [
                   {
-                    id: "trackandtrail",
-                    title: "Track and Trail",
+                    id: "machcity",
+                    title: "Mach City",
                     // description: "Track and Trail Cycle",
                   },
                   {
@@ -299,6 +238,16 @@ export async function sendIssueTypes(to) {
 
 export async function sendSlotList(to) {
   try {
+    const futureDate = dayjs().add(2, "day");
+    const formattedDate = futureDate.format("DD MMM"); // Example: "14 Nov"
+
+    const slots = [
+      { id: "slot_1", title: `${formattedDate} - 10 AM to 11 AM` },
+      { id: "slot_2", title: `${formattedDate} - 11 AM to 12 PM` },
+      { id: "slot_3", title: `${formattedDate} - 02 PM to 03 PM` },
+      { id: "slot_4", title: `${formattedDate} - 04 PM to 05 PM` },
+    ];
+
     const res = await axios.post(
       `https://graph.facebook.com/v17.0/${PHONE_NUMBER_ID}/messages`,
       {
@@ -312,34 +261,35 @@ export async function sendSlotList(to) {
             text: "Slots Selection",
           },
           body: {
-            text: "Please choose your slots from the list below:",
+            text: `Please choose your slot for **${formattedDate}**`,
           },
           footer: {
-            text: "Select three option to continue.",
+            text: "Select one option to continue.",
           },
           action: {
             button: "Choose Slots",
             sections: [
               {
                 title: "Available Slots",
-                rows: [
-                  {
-                    id: "slot_1",
-                    title: "12 Nov - 10 AM to 11 AM",
-                  },
-                  {
-                    id: "slot_2",
-                    title: "12 Nov - 11 AM to 12 PM",
-                  },
-                  {
-                    id: "slot_3",
-                    title: "12 Nov - 02 PM to 03 PM",
-                  },
-                  {
-                    id: "slot_4",
-                    title: "12 Nov - 04 PM to 05 PM",
-                  },
-                ],
+                rows: slots,
+                // rows: [
+                //   {
+                //     id: "slot_1",
+                //     title: "12 Nov - 10 AM to 11 AM",
+                //   },
+                //   {
+                //     id: "slot_2",
+                //     title: "12 Nov - 11 AM to 12 PM",
+                //   },
+                //   {
+                //     id: "slot_3",
+                //     title: "12 Nov - 02 PM to 03 PM",
+                //   },
+                //   {
+                //     id: "slot_4",
+                //     title: "12 Nov - 04 PM to 05 PM",
+                //   },
+                // ],
               },
             ],
           },
@@ -365,11 +315,11 @@ export async function sendSlotList(to) {
 export async function handleButtonClick(userNumber, buttonId) {
   console.log("User clicked:", buttonId);
 
-  if (buttonId === "Book via WhatsApp") {
-    userSessions[userNumber] = { step: 1, data: {} };
-    await sendText(userNumber, "Let's get your booking started!");
-    await sendText(userNumber, "What’s your full name?");
-  }
+  // if (buttonId === "Book via WhatsApp") {
+  //   userSessions[userNumber] = { step: 1, data: {} };
+  //   await sendText(userNumber, "Let's get your booking started!");
+  //   await sendText(userNumber, "What’s your full name?");
+  // }
 }
 
 export async function handleFormFlow(userNumber, userResponse) {
@@ -416,7 +366,7 @@ export async function handleFormFlow(userNumber, userResponse) {
       session.data.modelName = userResponse.trim();
       session.step = 5;
       await sendIssueTypes(userNumber);
-      break;      
+      break;
 
     case 7:
       if (userResponse === "__LOCATION_RECEIVED__") {
@@ -445,7 +395,7 @@ export async function handleFormFlow(userNumber, userResponse) {
       if (/^(confirm|yes)$/i.test(userResponse.trim())) {
         try {
           const response = await axios.post(
-            "https://your-api-endpoint.com/api/bookings",
+            "http://localhost:5000/service-requests",
             {
               name: session.data.name,
               email: session.data.email,
@@ -454,7 +404,7 @@ export async function handleFormFlow(userNumber, userResponse) {
               issueType: session.data.issueType,
               slot: session.data.slot,
               location: session.data.location,
-              userNumber: session.data.userNumber,
+              userNumber: userNumber,
             }
           );
 
@@ -496,94 +446,43 @@ export async function handleFormFlow(userNumber, userResponse) {
   }
 }
 
-// export async function sendButton(to, text, buttons) {
-//   const formattedButtons = buttons.map((btn) => ({
-//     type: "reply",
-//     reply: { id: btn.id, title: btn.title },
-//   }));
-//   try {
-//     const res = await axios.post(
-//       `https://graph.facebook.com/v17.0/${PHONE_NUMBER_ID}/messages`,
-//       {
-//         messaging_product: "whatsapp",
-//         to,
-//         type: "interactive",
-//         interactive: {
-//           type: "button",
-//           body: { text },
-//           action: { buttons: formattedButtons },
-//         },
-//       },
-//       {
-//         headers: {
-//           Authorization: `Bearer ${ACCESS_TOKEN}`,
-//           "Content-Type": "application/json",
-//         },
-//       }
-//     );
-//     console.log("Button sent:", res.data);
+export const serviceRequests = async (req, res) => {
+  try {
+    const {
+      name,
+      email,
+      brandName,
+      modelName,
+      issueType,
+      slot,
+      location,
+      userNumber,
+    } = req.body;
+    const newBooking = await SrBooking.create({
+      name,
+      email,    
+      brandName,
+      modelName,
+      issueType,
+      slot,
+      location,
+      userNumber,
+    }); 
 
-//   } catch (error) {
-//     console.error(
-//       "Error sending button:",
-//       error.response ? error.response.data : error.message
-//     );
-//   }
-// }
+    await newBooking.save();
 
-// export async function sendText(to, text) {
-//   try {
-//     const res = await axios.post(
-//       `https://graph.facebook.com/v17.0/${PHONE_NUMBER_ID}/messages`,
-//       {
-//         messaging_product: "whatsapp",
-//         to,
-//         type: "text",
-//         text: { body: text },
-//       },
-//       {
-//         headers: {
-//           Authorization: `Bearer ${ACCESS_TOKEN}`,
-//           "Content-Type": "application/json",
-//         },
-//       }
-//     );
-//     console.log("Text sent:", res.data);
-//   } catch (error) {
-//     console.error(
-//       "Error sending text:",
-//       error.response ? error.response.data : error.message
-//     );
-//   }
-// }
+    return res.status(201).json({
+      success: true,
+      message: "Service request created successfully",
+      data: newBooking,
+    });
+  } catch (error) {
+    console.error("Error creating service request:", error);
 
-// // ------------------- Flow Logic -------------------
-// export async function handleUserMessage(userNumber, message) {
-//   await sendButton(userNumber, "How can i help you?", [
-//     { id: "buy_product", title: "Buy Product" },
-//     { id: "talk_human", title: "Talk to Human" },
-//     { id: "service", title: "Services" },
-//   ]);
-// }
-
-// export async function handleButtonClick(userNumber, buttonId) {
-//     if (buttonId === "buy_product") {
-//       await sendText(userNumber, "Great! What product are you interested in?");
-//     } else if (buttonId === "service") {
-//         await sendButton(userNumber, "Choose a service:", [
-//           { id: "mobile_service", title: "Mobile" },
-//           { id: "internet_service", title: "Internet" },
-//           { id: "tv_service", title: "TV" },
-//         ])
-//     } else if (buttonId === "mobile_service") {
-//         await sendText(userNumber, "You selected Mobile Service. Our team will contact you shortly.");
-//     } else if (buttonId === 'internet_service') {
-//         await sendText(userNumber, 'You selected Internet Service. Our team will contact you shortly.');
-//     } else if (buttonId === 'tv_service') {
-//         await sendText(userNumber, 'You selected TV Service. Our team will contact you shortly.');
-//     } else if (buttonId === "talk_human") {
-//         await sendText(userNumber, "Please wait while we connect you to a human agent.");
-//     } else {
-//       await sendText(userNumber, "Sorry, I didn't understand that selection.");
-//     }
-// }
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
+};
